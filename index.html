@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro v1.1.1</title>
+    <title>Quadratura Enasarco Pro v1.2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -39,19 +39,19 @@
         <!-- KPI Dashboard -->
         <div id="dashboard" class="hidden grid lg:grid-cols-5 gap-5 mb-8 fade-in">
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Totale Rilevazioni</div>
+                <div class="text-sm text-slate-500 font-medium">Saldo Iniziale</div>
                 <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Totale Versamenti</div>
+                <div class="text-sm text-slate-500 font-medium">Rilevazioni</div>
                 <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Debito Residuo</div>
+                <div class="text-sm text-slate-500 font-medium">Versamenti</div>
                 <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Saldo Contabile</div>
+                <div class="text-sm text-slate-500 font-medium">Saldo Finale Atteso</div>
                 <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">EUR 0,00</div>
             </div>
             <div id="quadraturaCard" class="bg-white rounded-2xl p-6 shadow-sm border">
@@ -119,93 +119,214 @@
             return parseFloat(v) || 0;
         }
 
-        function formatCurrency(v) {
-            return 'EUR ' + Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+       function formatCurrency(v) {
+    return Number(v).toLocaleString('it-IT', {
+        style: 'currency',
+        currency: 'EUR'
+    });
+}
+
+    function processData(data) {
+
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    storedRows = [];
+
+    let totaleDare = 0;      // Versamenti
+    let totaleAvere = 0;     // Rilevazioni
+
+    let saldoIniziale = 0;
+    let ultimoSaldoDocumento = 0;
+
+    let trovatoBilancioApertura = false;
+
+    data.forEach(row => {
+
+        const getVal = (names) => {
+            const foundKey = Object.keys(row).find(k =>
+                names.some(n =>
+                    k.toLowerCase().replace(/\s/g, '') ===
+                    n.toLowerCase().replace(/\s/g, '')
+                )
+            );
+            return foundKey ? row[foundKey] : "";
+        };
+
+        const desc = (
+            getVal([
+                "Descrizione Contabile",
+                "Descrizione"
+            ]) || ""
+        ).toString();
+
+        const dare = parseCurrency(
+            getVal(["Dare"])
+        );
+
+        const avere = parseCurrency(
+            getVal(["Avere"])
+        );
+
+        const saldo = parseCurrency(
+            getVal([
+                "Saldo Progressivo",
+                "SaldoProgressivo"
+            ])
+        );
+
+        let dataReg = getVal([
+            "Data Registraz.",
+            "DataRegistraz.",
+            "Data"
+        ]);
+
+        if (dataReg instanceof Date) {
+            dataReg = dataReg.toLocaleDateString('it-IT');
         }
 
-        function processData(data) {
-            const tbody = document.getElementById('tbody');
-            tbody.innerHTML = '';
-            storedRows = [];
-            let totaleDare = 0;
-            let totaleAvere = 0;
-            let ultimoSaldoDocumento = 0;
+        const descLower = desc.toLowerCase();
 
-            data.forEach(row => {
-                const getVal = (names) => {
-                    const foundKey = Object.keys(row).find(k => 
-                        names.some(n => k.toLowerCase().replace(/\s/g, '') === n.toLowerCase().replace(/\s/g, ''))
-                    );
-                    return foundKey ? row[foundKey] : "";
-                };
+const isBilancio =
+    descLower.includes("bilancio di apertura") ||
+    descLower === "bila";
 
-                const desc = (getVal(["Descrizione Contabile", "Descrizione"]) || "").toString();
-                const dare = parseCurrency(getVal(["Dare"]));
-                const avere = parseCurrency(getVal(["Avere"]));
-                const saldo = parseCurrency(getVal(["Saldo Progressivo", "SaldoProgressivo"]));
-                
-                let dataReg = getVal(["Data Registraz.", "DataRegistraz.", "Data"]);
-                if (dataReg instanceof Date) {
-                    dataReg = dataReg.toLocaleDateString('it-IT');
-                }
+const isEnasarco =
+    descLower.includes("enasarco") ||
+    descLower.includes("rilevazione enasarco");
 
-                ultimoSaldoDocumento = saldo;
+        const isVersamento =
+            descLower.includes("versamento") ||
+            descLower.includes("versam");
 
-                const descLower = desc.toLowerCase();
-                const eRilevante = descLower.includes("enasarco") || 
-                                 descLower.includes("versam") || 
-                                 descLower.includes("addebito rid") || 
-                                 descLower.includes("bilancio di apertura") ||
-                                 descLower.includes("bila");
+        const isAddebito =
+            descLower.includes("addebito");
 
-                if (!eRilevante || descLower.includes("totali:")) return;
+        const eRilevante =
+            isBilancio ||
+            isEnasarco ||
+            isVersamento ||
+            isAddebito;
 
-                totaleDare += dare;
-                totaleAvere += avere;
+        if (!eRilevante) return;
 
-                storedRows.push({ data: dataReg, desc, dare, avere, saldo });
-            });
+        if (descLower.includes("totali:")) return;
 
-            renderTable(storedRows);
+        if (isBilancio && !trovatoBilancioApertura) {
 
-            const debitoResiduo = totaleAvere - totaleDare;
-            const saldoContabile = totaleDare - totaleAvere;
-            const differenzaQuadratura = ultimoSaldoDocumento - saldoContabile;
+            saldoIniziale = saldo;
+            trovatoBilancioApertura = true;
 
-            document.getElementById("dashboard").classList.remove("hidden");
-            document.getElementById("tableContainer").classList.remove("hidden");
-            
-            document.getElementById("totAvere").textContent = formatCurrency(totaleAvere);
-            document.getElementById("totDare").textContent = formatCurrency(totaleDare);
-            document.getElementById("saldoResiduo").textContent = formatCurrency(debitoResiduo);
-            document.getElementById("saldoContabile").textContent = formatCurrency(saldoContabile);
+        } else {
 
-            const status = document.getElementById("quadraturaStatus");
-            const diffText = document.getElementById("quadraturaDiff");
-
-            if (Math.abs(differenzaQuadratura) < 0.1) {
-                status.textContent = "Quadratura OK";
-                status.className = "text-xl font-bold text-emerald-600";
-                diffText.textContent = "Il saldo contabile coincide con l'estratto conto";
-            } else {
-                status.textContent = "Da Verificare";
-                status.className = "text-xl font-bold text-red-600";
-                diffText.textContent = "Scostamento: " + formatCurrency(differenzaQuadratura);
-            }
+            totaleDare += dare;
+            totaleAvere += avere;
         }
+
+        ultimoSaldoDocumento = saldo;
+
+        storedRows.push({
+            data: dataReg,
+            desc,
+            dare,
+            avere,
+            saldo
+        });
+    });
+
+    renderTable(storedRows);
+
+    const saldoFinaleAtteso =
+        saldoIniziale +
+        totaleDare -
+        totaleAvere;
+
+    const differenzaQuadratura =
+        ultimoSaldoDocumento -
+        saldoFinaleAtteso;
+
+    document.getElementById("dashboard")
+        .classList.remove("hidden");
+
+    document.getElementById("tableContainer")
+        .classList.remove("hidden");
+
+    // KPI
+
+    document.getElementById("totAvere")
+        .textContent = formatCurrency(saldoIniziale);
+
+    document.getElementById("totDare")
+        .textContent = formatCurrency(totaleAvere);
+
+    document.getElementById("saldoResiduo")
+        .textContent = formatCurrency(totaleDare);
+
+document.getElementById("saldoContabile")
+    .textContent = formatCurrency(ultimoSaldoDocumento);
+
+    const status =
+        document.getElementById("quadraturaStatus");
+
+    const diffText =
+        document.getElementById("quadraturaDiff");
+
+        console.log("Saldo iniziale:", saldoIniziale);
+console.log("Totale Dare:", totaleDare);
+console.log("Totale Avere:", totaleAvere);
+console.log("Saldo finale atteso:", saldoFinaleAtteso);
+console.log("Saldo documento:", ultimoSaldoDocumento);
+console.log("Differenza:", differenzaQuadratura);
+
+    if (Math.abs(differenzaQuadratura) < 0.01) {
+
+        status.textContent = "Quadratura OK";
+
+        status.className =
+            "text-xl font-bold text-emerald-600";
+
+        diffText.textContent =
+            "Saldo estratto conto coincidente";
+
+    } else {
+
+        status.textContent =
+            "Da Verificare";
+
+        status.className =
+            "text-xl font-bold text-red-600";
+
+       diffText.textContent =
+    "Scostamento: " +
+    formatCurrency(Math.abs(differenzaQuadratura));
+    }
+}
 
         function renderTable(rows) {
-            const tbody = document.getElementById('tbody');
-            tbody.innerHTML = rows.map(r => `
-                <tr class="border-b hover:bg-slate-50 transition-colors">
-                    <td class="p-4 text-slate-600">${r.data}</td>
-                    <td class="p-4 font-medium text-slate-800">${r.desc}</td>
-                    <td class="p-4 text-right text-emerald-600">${r.dare !== 0 ? formatCurrency(r.dare) : '-'}</td>
-                    <td class="p-4 text-right text-blue-600">${r.avere !== 0 ? formatCurrency(r.avere) : '-'}</td>
-                    <td class="p-4 text-right font-mono font-bold ${r.saldo < 0 ? 'text-red-500' : 'text-slate-700'}">${formatCurrency(r.saldo)}</td>
-                </tr>
-            `).join('');
-        }
+
+    const tbody = document.getElementById('tbody');
+
+    tbody.innerHTML = rows.map(r => `
+        <tr class="border-b hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-600">${r.data}</td>
+
+            <td class="p-4 font-medium text-slate-800">
+                ${r.desc}
+            </td>
+
+            <td class="p-4 text-right text-emerald-600">
+                ${r.dare !== 0 ? formatCurrency(r.dare) : '-'}
+            </td>
+
+            <td class="p-4 text-right text-blue-600">
+                ${r.avere !== 0 ? formatCurrency(r.avere) : '-'}
+            </td>
+
+            <td class="p-4 text-right font-mono font-bold ${r.saldo < 0 ? 'text-red-500' : 'text-slate-700'}">
+                ${formatCurrency(r.saldo)}
+            </td>
+        </tr>
+    `).join('');
+}
 
         document.getElementById('searchInput')?.addEventListener('input', function() {
             const term = this.value.toLowerCase();
