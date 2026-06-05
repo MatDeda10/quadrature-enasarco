@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro</title>
+    <title>Quadratura Enasarco Pro v1.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -17,65 +17,67 @@
 </head>
 <body class="min-h-screen">
     <div class="max-w-7xl mx-auto p-6">
-        <div class="mb-8">
+        <div class="mb-8 flex items-baseline gap-3">
             <h1 class="text-4xl font-bold text-slate-900">Quadratura Enasarco</h1>
-            <p class="text-slate-500 mt-2">Analisi automatica rilevazioni, versamenti e saldo residuo da Excel o CSV.</p>
+            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.1.0</span>
         </div>
+        
+        <p class="text-slate-500 -mt-6 mb-8">Analisi automatica rilevazioni, versamenti e saldo residuo. Supporto Excel e CSV.</p>
 
-        <!-- Upload -->
+        <!-- Upload Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
             <label class="flex flex-col items-center justify-center h-52 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:bg-blue-50 transition">
                 <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 20h16"/>
                 </svg>
-                <span class="font-semibold text-slate-700">Carica estratto conto (Excel o CSV)</span>
-                <span class="text-sm text-slate-500 mt-1">Supporta .xlsx, .xls, .csv, .txt</span>
+                <span class="font-semibold text-slate-700">Carica estratto conto</span>
+                <span class="text-sm text-slate-500 mt-1">Trascina qui il file .xlsx, .xls o .csv</span>
                 <input id="fileInput" type="file" accept=".xlsx, .xls, .csv, .txt" class="hidden">
             </label>
         </div>
 
-        <!-- Dashboard -->
+        <!-- KPI Dashboard -->
         <div id="dashboard" class="hidden grid lg:grid-cols-5 gap-5 mb-8 fade-in">
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500">Rilevazioni</div>
-                <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">€ 0,00</div>
+                <div class="text-sm text-slate-500 font-medium">Totale Rilevazioni</div>
+                <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">USD 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500">Versamenti</div>
-                <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">€ 0,00</div>
+                <div class="text-sm text-slate-500 font-medium">Totale Versamenti</div>
+                <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">USD 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500">Debito Residuo</div>
-                <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">€ 0,00</div>
+                <div class="text-sm text-slate-500 font-medium">Debito Residuo</div>
+                <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">USD 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500">Saldo Contabile</div>
-                <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">€ 0,00</div>
+                <div class="text-sm text-slate-500 font-medium">Saldo Contabile</div>
+                <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">USD 0,00</div>
             </div>
             <div id="quadraturaCard" class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500">Stato Quadratura</div>
+                <div class="text-sm text-slate-500 font-medium">Stato Quadratura</div>
                 <div id="quadraturaStatus" class="text-xl font-bold mt-2">—</div>
-                <div id="quadraturaDiff" class="text-sm mt-2 text-slate-500"></div>
+                <div id="quadraturaDiff" class="text-xs mt-2 text-slate-500"></div>
             </div>
         </div>
 
-        <!-- Table -->
+        <!-- Table View -->
         <div id="tableContainer" class="hidden bg-white rounded-2xl shadow-sm border overflow-hidden fade-in">
             <div class="p-4 border-b bg-slate-50">
-                <input id="searchInput" placeholder="Cerca descrizione..." class="w-full border rounded-lg px-4 py-2">
+                <input id="searchInput" placeholder="Filtra per descrizione..." class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
-            <div class="overflow-auto">
-                <table class="w-full">
-                    <thead class="bg-slate-100 text-slate-700">
+            <div class="overflow-auto max-h-[600px]">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-700 sticky top-0">
                         <tr>
                             <th class="p-4 text-left">Data</th>
                             <th class="p-4 text-left">Descrizione</th>
-                            <th class="p-4 text-right">Dare</th>
-                            <th class="p-4 text-right">Avere</th>
+                            <th class="p-4 text-right">Dare (Pagamenti)</th>
+                            <th class="p-4 text-right">Avere (Competenze)</th>
                             <th class="p-4 text-right">Saldo Prog.</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody"></tbody>
+                    <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
@@ -92,7 +94,7 @@
             const reader = new FileReader();
             reader.onload = (evt) => {
                 const bstr = evt.target.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
                 const wsname = wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
                 const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
@@ -118,7 +120,7 @@
         }
 
         function formatCurrency(v) {
-            return v.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+            return 'USD ' + Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function processData(data) {
@@ -127,26 +129,36 @@
             storedRows = [];
             let totaleDare = 0;
             let totaleAvere = 0;
-            let ultimoSaldo = 0;
+            let ultimoSaldoDocumento = 0;
 
             data.forEach(row => {
-                // Normalizzazione chiavi (gestisce spazi e invii nei nomi colonne Excel)
                 const getVal = (names) => {
-                    for (let n of names) {
-                        const key = Object.keys(row).find(k => k.replace(/\s/g, '') === n.replace(/\s/g, ''));
-                        if (key) return row[key];
-                    }
-                    return "";
+                    const foundKey = Object.keys(row).find(k => 
+                        names.some(n => k.toLowerCase().replace(/\s/g, '') === n.toLowerCase().replace(/\s/g, ''))
+                    );
+                    return foundKey ? row[foundKey] : "";
                 };
 
                 const desc = (getVal(["Descrizione Contabile", "Descrizione"]) || "").toString();
                 const dare = parseCurrency(getVal(["Dare"]));
                 const avere = parseCurrency(getVal(["Avere"]));
                 const saldo = parseCurrency(getVal(["Saldo Progressivo", "SaldoProgressivo"]));
-                const dataReg = getVal(["Data Registraz.", "DataRegistraz.", "Data"]);
+                
+                let dataReg = getVal(["Data Registraz.", "DataRegistraz.", "Data"]);
+                if (dataReg instanceof Date) {
+                    dataReg = dataReg.toLocaleDateString('it-IT');
+                }
 
-                ultimoSaldo = saldo;
-                if (!desc.toLowerCase().includes("enasarco")) return;
+                ultimoSaldoDocumento = saldo;
+
+                const descLower = desc.toLowerCase();
+                const eRilevante = descLower.includes("enasarco") || 
+                                 descLower.includes("versam") || 
+                                 descLower.includes("addebito rid") || 
+                                 descLower.includes("bilancio di apertura") ||
+                                 descLower.includes("bila");
+
+                if (!eRilevante || descLower.includes("totali:")) return;
 
                 totaleDare += dare;
                 totaleAvere += avere;
@@ -158,38 +170,39 @@
 
             const debitoResiduo = totaleAvere - totaleDare;
             const saldoContabile = totaleDare - totaleAvere;
-            const differenza = ultimoSaldo - saldoContabile;
+            const differenzaQuadratura = ultimoSaldoDocumento - saldoContabile;
 
             document.getElementById("dashboard").classList.remove("hidden");
             document.getElementById("tableContainer").classList.remove("hidden");
+            
             document.getElementById("totAvere").textContent = formatCurrency(totaleAvere);
             document.getElementById("totDare").textContent = formatCurrency(totaleDare);
             document.getElementById("saldoResiduo").textContent = formatCurrency(debitoResiduo);
             document.getElementById("saldoContabile").textContent = formatCurrency(saldoContabile);
 
             const status = document.getElementById("quadraturaStatus");
-            const diff = document.getElementById("quadraturaDiff");
+            const diffText = document.getElementById("quadraturaDiff");
 
-            if (Math.abs(differenza) < 0.01) {
-                status.innerHTML = "Quadratura OK";
+            if (Math.abs(differenzaQuadratura) < 0.1) {
+                status.textContent = "Quadratura OK";
                 status.className = "text-xl font-bold text-emerald-600";
-                diff.textContent = "Saldo coerente con l'estratto conto";
+                diffText.textContent = "Il saldo contabile coincide con l'estratto conto";
             } else {
-                status.innerHTML = "Da verificare";
+                status.textContent = "Da Verificare";
                 status.className = "text-xl font-bold text-red-600";
-                diff.textContent = "Differenza: " + formatCurrency(differenza);
+                diffText.textContent = "Scostamento: " + formatCurrency(differenzaQuadratura);
             }
         }
 
         function renderTable(rows) {
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = rows.map(r => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4">${r.data}</td>
-                    <td class="p-4">${r.desc}</td>
-                    <td class="p-4 text-right text-emerald-600">${r.dare ? formatCurrency(r.dare) : '-'}</td>
-                    <td class="p-4 text-right text-blue-600">${r.avere ? formatCurrency(r.avere) : '-'}</td>
-                    <td class="p-4 text-right">${formatCurrency(r.saldo)}</td>
+                <tr class="border-b hover:bg-slate-50 transition-colors">
+                    <td class="p-4 text-slate-600">${r.data}</td>
+                    <td class="p-4 font-medium text-slate-800">${r.desc}</td>
+                    <td class="p-4 text-right text-emerald-600">${r.dare !== 0 ? formatCurrency(r.dare) : '-'}</td>
+                    <td class="p-4 text-right text-blue-600">${r.avere !== 0 ? formatCurrency(r.avere) : '-'}</td>
+                    <td class="p-4 text-right font-mono font-bold ${r.saldo < 0 ? 'text-red-500' : 'text-slate-700'}">${formatCurrency(r.saldo)}</td>
                 </tr>
             `).join('');
         }
