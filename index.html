@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro v1.2.0</title>
+    <title>Quadratura Enasarco Pro v1.2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -19,7 +19,7 @@
     <div class="max-w-7xl mx-auto p-6">
         <div class="mb-8 flex items-baseline gap-3">
             <h1 class="text-4xl font-bold text-slate-900">Quadratura Enasarco</h1>
-            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.2.0</span>
+            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.2.1</span>
         </div>
         
         <p class="text-slate-500 -mt-6 mb-8">Analisi automatica rilevazioni, versamenti e saldo residuo. Supporto Excel e CSV.</p>
@@ -235,10 +235,10 @@ const isEnasarco =
 
     renderTable(storedRows);
 
-    const saldoFinaleAtteso =
-        saldoIniziale +
-        totaleDare -
-        totaleAvere;
+const saldoFinaleAtteso =
+    saldoIniziale -
+    totaleDare +
+    totaleAvere;
 
     const differenzaQuadratura =
         ultimoSaldoDocumento -
@@ -262,7 +262,7 @@ const isEnasarco =
         .textContent = formatCurrency(totaleDare);
 
 document.getElementById("saldoContabile")
-    .textContent = formatCurrency(ultimoSaldoDocumento);
+    .textContent = formatCurrency(saldoFinaleAtteso);
 
     const status =
         document.getElementById("quadraturaStatus");
