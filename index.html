@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro v1.2.1</title>
+    <title>Quadratura Enasarco Pro v1.2.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -19,320 +19,228 @@
     <div class="max-w-7xl mx-auto p-6">
         <div class="mb-8 flex items-baseline gap-3">
             <h1 class="text-4xl font-bold text-slate-900">Quadratura Enasarco</h1>
-            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.2.1</span>
+            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.2.3</span>
         </div>
-        
-        <p class="text-slate-500 -mt-6 mb-8">Analisi automatica rilevazioni, versamenti e saldo residuo. Supporto Excel e CSV.</p>
+    <p class="text-slate-500 -mt-6 mb-8">Analisi automatica rilevazioni, versamenti e saldo residuo. Supporto Excel e CSV.</p>
 
-        <!-- Upload Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
-            <label class="flex flex-col items-center justify-center h-52 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:bg-blue-50 transition">
-                <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 20h16"/>
-                </svg>
-                <span class="font-semibold text-slate-700">Carica estratto conto</span>
-                <span class="text-sm text-slate-500 mt-1">Trascina qui il file .xlsx, .xls o .csv</span>
-                <input id="fileInput" type="file" accept=".xlsx, .xls, .csv, .txt" class="hidden">
-            </label>
+    <!-- Upload Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
+        <label class="flex flex-col items-center justify-center h-52 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:bg-blue-50 transition">
+            <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 20h16"/>
+            </svg>
+            <span class="font-semibold text-slate-700">Carica estratto conto</span>
+            <span class="text-sm text-slate-500 mt-1">Trascina qui il file .xlsx, .xls o .csv</span>
+            <input id="fileInput" type="file" accept=".xlsx, .xls, .csv, .txt" class="hidden">
+        </label>
+    </div>
+
+    <!-- KPI Dashboard -->
+    <div id="dashboard" class="hidden grid lg:grid-cols-5 gap-5 mb-8 fade-in">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="text-sm text-slate-500 font-medium">Saldo Iniziale</div>
+            <div id="totSaldoIniziale" class="text-2xl font-bold text-blue-600 mt-2">EUR 0,00</div>
         </div>
-
-        <!-- KPI Dashboard -->
-        <div id="dashboard" class="hidden grid lg:grid-cols-5 gap-5 mb-8 fade-in">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Saldo Iniziale</div>
-                <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">EUR 0,00</div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Rilevazioni</div>
-                <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">EUR 0,00</div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Versamenti</div>
-                <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">EUR 0,00</div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Saldo Finale Atteso</div>
-                <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">EUR 0,00</div>
-            </div>
-            <div id="quadraturaCard" class="bg-white rounded-2xl p-6 shadow-sm border">
-                <div class="text-sm text-slate-500 font-medium">Stato Quadratura</div>
-                <div id="quadraturaStatus" class="text-xl font-bold mt-2">—</div>
-                <div id="quadraturaDiff" class="text-xs mt-2 text-slate-500"></div>
-            </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="text-sm text-slate-500 font-medium">Rilevazioni (Avere)</div>
+            <div id="totAvere" class="text-2xl font-bold text-red-600 mt-2">EUR 0,00</div>
         </div>
-
-        <!-- Table View -->
-        <div id="tableContainer" class="hidden bg-white rounded-2xl shadow-sm border overflow-hidden fade-in">
-            <div class="p-4 border-b bg-slate-50">
-                <input id="searchInput" placeholder="Filtra per descrizione..." class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <div class="overflow-auto max-h-[600px]">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-100 text-slate-700 sticky top-0">
-                        <tr>
-                            <th class="p-4 text-left">Data</th>
-                            <th class="p-4 text-left">Descrizione</th>
-                            <th class="p-4 text-right">Dare (Pagamenti)</th>
-                            <th class="p-4 text-right">Avere (Competenze)</th>
-                            <th class="p-4 text-right">Saldo Prog.</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="text-sm text-slate-500 font-medium">Versamenti (Dare)</div>
+            <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">EUR 0,00</div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="text-sm text-slate-500 font-medium">Saldo Finale Atteso</div>
+            <div id="saldoAtteso" class="text-2xl font-bold text-slate-900 mt-2">EUR 0,00</div>
+        </div>
+        <div id="quadraturaCard" class="bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="text-sm text-slate-500 font-medium">Stato Quadratura</div>
+            <div id="quadraturaStatus" class="text-xl font-bold mt-2">—</div>
+            <div id="quadraturaDiff" class="text-xs mt-2 text-slate-500"></div>
         </div>
     </div>
 
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        let storedRows = [];
+    <!-- Table View -->
+    <div id="tableContainer" class="hidden bg-white rounded-2xl shadow-sm border overflow-hidden fade-in">
+        <div class="p-4 border-b bg-slate-50">
+            <input id="searchInput" placeholder="Filtra per descrizione..." class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div class="overflow-auto max-h-[600px]">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-100 text-slate-700 sticky top-0">
+                    <tr>
+                        <th class="p-4 text-left">Data</th>
+                        <th class="p-4 text-left">Descrizione</th>
+                        <th class="p-4 text-right">Dare (Pagamenti)</th>
+                        <th class="p-4 text-right">Avere (Competenze)</th>
+                        <th class="p-4 text-right">Saldo Prog.</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-        fileInput.addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (!file) return;
+<script>
+    const fileInput = document.getElementById('fileInput');
+    let storedRows = [];
 
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const bstr = evt.target.result;
-                const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
-                const wsname = wb.SheetNames[0];
-                const ws = wb.Sheets[wsname];
-                const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
-                processData(data);
-            };
-            reader.readAsBinaryString(file);
-        });
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        function parseCurrency(value) {
-            if (typeof value === 'number') return value;
-            if (!value) return 0;
-            let v = value.toString().trim().replace(/"/g, '');
-            if (v.includes('.') && v.includes(',')) {
-                if (v.lastIndexOf(',') > v.lastIndexOf('.')) {
-                    v = v.replace(/\./g, '').replace(',', '.');
-                } else {
-                    v = v.replace(/,/g, '');
-                }
-            } else if (v.includes(',')) {
-                v = v.replace(',', '.');
-            }
-            return parseFloat(v) || 0;
-        }
-
-       function formatCurrency(v) {
-    return Number(v).toLocaleString('it-IT', {
-        style: 'currency',
-        currency: 'EUR'
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const bstr = evt.target.result;
+            const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
+            const wsname = wb.SheetNames[0];
+            const ws = wb.Sheets[wsname];
+            const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
+            processData(data);
+        };
+        reader.readAsBinaryString(file);
     });
-}
+
+    function parseCurrency(value) {
+        if (typeof value === 'number') return value;
+        if (!value) return 0;
+        let v = value.toString().trim().replace(/"/g, '');
+        // Gestione formato italiano (punti per migliaia, virgola per decimali)
+        if (v.includes('.') && v.includes(',')) {
+            if (v.lastIndexOf(',') > v.lastIndexOf('.')) {
+                v = v.replace(/\./g, '').replace(',', '.');
+            } else {
+                v = v.replace(/,/g, '');
+            }
+        } else if (v.includes(',')) {
+            v = v.replace(',', '.');
+        }
+        return parseFloat(v) || 0;
+    }
+
+    function formatCurrency(v) {
+        return Number(v).toLocaleString('it-IT', {
+            style: 'currency',
+            currency: 'EUR'
+        });
+    }
 
     function processData(data) {
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        storedRows = [];
 
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '';
-    storedRows = [];
+        let totaleDare = 0;
+        let totaleAvere = 0;
+        let saldoIniziale = 0;
+        let ultimoSaldoDocumento = 0;
+        let trovatoBilancioApertura = false;
 
-    let totaleDare = 0;      // Versamenti
-    let totaleAvere = 0;     // Rilevazioni
+        data.forEach(row => {
+            const getVal = (names) => {
+                const foundKey = Object.keys(row).find(k =>
+                    names.some(n =>
+                        k.toLowerCase().replace(/\s/g, '') ===
+                        n.toLowerCase().replace(/\s/g, '')
+                    )
+                );
+                return foundKey ? row[foundKey] : "";
+            };
 
-    let saldoIniziale = 0;
-    let ultimoSaldoDocumento = 0;
+            const desc = (getVal(["Descrizione Contabile", "Descrizione"]) || "").toString();
+            const dare = parseCurrency(getVal(["Dare"]));
+            const avere = parseCurrency(getVal(["Avere"]));
+            const saldo = parseCurrency(getVal(["Saldo Progressivo", "SaldoProgressivo"]));
+            let dataReg = getVal(["Data Registraz.", "DataRegistraz.", "Data"]);
 
-    let trovatoBilancioApertura = false;
+            if (dataReg instanceof Date) {
+                dataReg = dataReg.toLocaleDateString('it-IT');
+            }
 
-    data.forEach(row => {
+            const descLower = desc.toLowerCase();
+            const isBilancio = descLower.includes("bilancio di apertura") || descLower === "bila";
+            const isEnasarco = descLower.includes("enasarco");
+            const isVersamento = descLower.includes("versamento") || descLower.includes("versam") || descLower.includes("addebito");
 
-        const getVal = (names) => {
-            const foundKey = Object.keys(row).find(k =>
-                names.some(n =>
-                    k.toLowerCase().replace(/\s/g, '') ===
-                    n.toLowerCase().replace(/\s/g, '')
-                )
-            );
-            return foundKey ? row[foundKey] : "";
-        };
+            const eRilevante = isBilancio || isEnasarco || isVersamento;
 
-        const desc = (
-            getVal([
-                "Descrizione Contabile",
-                "Descrizione"
-            ]) || ""
-        ).toString();
+            if (!eRilevante || descLower.includes("totali:")) return;
 
-        const dare = parseCurrency(
-            getVal(["Dare"])
-        );
+            if (isBilancio && !trovatoBilancioApertura) {
+                saldoIniziale = saldo;
+                trovatoBilancioApertura = true;
+            } else {
+                totaleDare += dare;
+                totaleAvere += avere;
+            }
 
-        const avere = parseCurrency(
-            getVal(["Avere"])
-        );
+            ultimoSaldoDocumento = saldo;
 
-        const saldo = parseCurrency(
-            getVal([
-                "Saldo Progressivo",
-                "SaldoProgressivo"
-            ])
-        );
+            storedRows.push({
+                data: dataReg,
+                desc,
+                dare,
+                avere,
+                saldo
+            });
+        });
 
-        let dataReg = getVal([
-            "Data Registraz.",
-            "DataRegistraz.",
-            "Data"
-        ]);
+        renderTable(storedRows);
 
-        if (dataReg instanceof Date) {
-            dataReg = dataReg.toLocaleDateString('it-IT');
-        }
+        // Logica di quadratura:
+        // Saldo finale = Saldo Iniziale + Dare (pagamenti che riducono il debito) - Avere (nuove competenze che aumentano il debito)
+        const calcoloSaldoAtteso = saldoIniziale + totaleDare - totaleAvere;
+        const differenzaQuadratura = calcoloSaldoAtteso - ultimoSaldoDocumento;
 
-        const descLower = desc.toLowerCase();
+        document.getElementById("dashboard").classList.remove("hidden");
+        document.getElementById("tableContainer").classList.remove("hidden");
 
-const isBilancio =
-    descLower.includes("bilancio di apertura") ||
-    descLower === "bila";
+        // Aggiornamento KPI
+        document.getElementById("totSaldoIniziale").textContent = formatCurrency(saldoIniziale);
+        document.getElementById("totDare").textContent = formatCurrency(totaleDare);
+        document.getElementById("totAvere").textContent = formatCurrency(totaleAvere);
+        document.getElementById("saldoAtteso").textContent = formatCurrency(calcoloSaldoAtteso);
 
-const isEnasarco =
-    descLower.includes("enasarco") ||
-    descLower.includes("rilevazione enasarco");
+        const status = document.getElementById("quadraturaStatus");
+        const diffText = document.getElementById("quadraturaDiff");
 
-        const isVersamento =
-            descLower.includes("versamento") ||
-            descLower.includes("versam");
-
-        const isAddebito =
-            descLower.includes("addebito");
-
-        const eRilevante =
-            isBilancio ||
-            isEnasarco ||
-            isVersamento ||
-            isAddebito;
-
-        if (!eRilevante) return;
-
-        if (descLower.includes("totali:")) return;
-
-        if (isBilancio && !trovatoBilancioApertura) {
-
-            saldoIniziale = saldo;
-            trovatoBilancioApertura = true;
-
+        if (Math.abs(differenzaQuadratura) < 0.01) {
+            status.textContent = "Quadratura OK";
+            status.className = "text-xl font-bold text-emerald-600";
+            diffText.textContent = "Saldo estratto conto coincidente";
         } else {
-
-            totaleDare += dare;
-            totaleAvere += avere;
+            status.textContent = "Da Verificare";
+            status.className = "text-xl font-bold text-red-600";
+            diffText.textContent = "Scostamento: " + formatCurrency(Math.abs(differenzaQuadratura));
         }
-
-        ultimoSaldoDocumento = saldo;
-
-        storedRows.push({
-            data: dataReg,
-            desc,
-            dare,
-            avere,
-            saldo
-        });
-    });
-
-    renderTable(storedRows);
-
-const saldoFinaleAtteso =
-    saldoIniziale -
-    totaleDare +
-    totaleAvere;
-
-    const differenzaQuadratura =
-        ultimoSaldoDocumento -
-        saldoFinaleAtteso;
-
-    document.getElementById("dashboard")
-        .classList.remove("hidden");
-
-    document.getElementById("tableContainer")
-        .classList.remove("hidden");
-
-    // KPI
-
-    document.getElementById("totAvere")
-        .textContent = formatCurrency(saldoIniziale);
-
-    document.getElementById("totDare")
-        .textContent = formatCurrency(totaleAvere);
-
-    document.getElementById("saldoResiduo")
-        .textContent = formatCurrency(totaleDare);
-
-document.getElementById("saldoContabile")
-    .textContent = formatCurrency(saldoFinaleAtteso);
-
-    const status =
-        document.getElementById("quadraturaStatus");
-
-    const diffText =
-        document.getElementById("quadraturaDiff");
-
-        console.log("Saldo iniziale:", saldoIniziale);
-console.log("Totale Dare:", totaleDare);
-console.log("Totale Avere:", totaleAvere);
-console.log("Saldo finale atteso:", saldoFinaleAtteso);
-console.log("Saldo documento:", ultimoSaldoDocumento);
-console.log("Differenza:", differenzaQuadratura);
-
-    if (Math.abs(differenzaQuadratura) < 0.01) {
-
-        status.textContent = "Quadratura OK";
-
-        status.className =
-            "text-xl font-bold text-emerald-600";
-
-        diffText.textContent =
-            "Saldo estratto conto coincidente";
-
-    } else {
-
-        status.textContent =
-            "Da Verificare";
-
-        status.className =
-            "text-xl font-bold text-red-600";
-
-       diffText.textContent =
-    "Scostamento: " +
-    formatCurrency(Math.abs(differenzaQuadratura));
     }
-}
 
-        function renderTable(rows) {
+    function renderTable(rows) {
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = rows.map(r => `
+            <tr class="border-b hover:bg-slate-50 transition-colors">
+                <td class="p-4 text-slate-600">${r.data}</td>
+                <td class="p-4 font-medium text-slate-800">${r.desc}</td>
+                <td class="p-4 text-right text-emerald-600">
+                    ${r.dare !== 0 ? formatCurrency(r.dare) : '-'}
+                </td>
+                <td class="p-4 text-right text-red-600">
+                    ${r.avere !== 0 ? formatCurrency(r.avere) : '-'}
+                </td>
+                <td class="p-4 text-right font-mono font-bold ${r.saldo < 0 ? 'text-red-500' : 'text-slate-700'}">
+                    ${formatCurrency(r.saldo)}
+                </td>
+            </tr>
+        `).join('');
+    }
 
-    const tbody = document.getElementById('tbody');
+    document.getElementById('searchInput')?.addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        const filtered = storedRows.filter(r => r.desc.toLowerCase().includes(term));
+        renderTable(filtered);
+    });
+</script>
 
-    tbody.innerHTML = rows.map(r => `
-        <tr class="border-b hover:bg-slate-50 transition-colors">
-            <td class="p-4 text-slate-600">${r.data}</td>
-
-            <td class="p-4 font-medium text-slate-800">
-                ${r.desc}
-            </td>
-
-            <td class="p-4 text-right text-emerald-600">
-                ${r.dare !== 0 ? formatCurrency(r.dare) : '-'}
-            </td>
-
-            <td class="p-4 text-right text-blue-600">
-                ${r.avere !== 0 ? formatCurrency(r.avere) : '-'}
-            </td>
-
-            <td class="p-4 text-right font-mono font-bold ${r.saldo < 0 ? 'text-red-500' : 'text-slate-700'}">
-                ${formatCurrency(r.saldo)}
-            </td>
-        </tr>
-    `).join('');
-}
-
-        document.getElementById('searchInput')?.addEventListener('input', function() {
-            const term = this.value.toLowerCase();
-            const filtered = storedRows.filter(r => r.desc.toLowerCase().includes(term));
-            renderTable(filtered);
-        });
-    </script>
 </body>
 </html>
