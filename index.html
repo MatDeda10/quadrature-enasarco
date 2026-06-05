@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro - v1.3.0</title>
+    <title>Quadratura Enasarco Pro - v1.3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -19,12 +19,11 @@
                 <p class="text-slate-600 mt-2">Analisi tecnica flussi Dare/Avere e riconciliazione saldi progressivi.</p>
             </div>
             <div class="text-right">
-                <span id="versionTag" class="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.3.0</span>
+                <span id="versionTag" class="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.3.1</span>
                 <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">Engineering Tool - Mat</p>
             </div>
         </header>
 
-        <!-- Upload Section -->
         <div class="card p-8 mb-8 text-center border-dashed border-2 border-slate-300">
             <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden">
             <label for="fileInput" class="cursor-pointer group">
@@ -35,7 +34,6 @@
             </label>
         </div>
 
-        <!-- Dashboard KPI -->
         <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="card p-5">
                 <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo Iniziale</div>
@@ -56,9 +54,7 @@
             </div>
         </div>
 
-        <!-- Main Content -->
         <div id="mainContent" class="hidden space-y-8">
-            <!-- Summary Table -->
             <div class="card overflow-hidden">
                 <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
                     <h2 class="font-bold text-slate-800 uppercase text-sm tracking-widest">Sintesi per Periodo</h2>
@@ -76,7 +72,6 @@
                 </table>
             </div>
 
-            <!-- Detailed Log -->
             <div class="card overflow-hidden">
                 <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <h2 class="font-bold text-slate-800 uppercase text-sm tracking-widest">Dettaglio Operazioni</h2>
@@ -101,12 +96,6 @@
     </div>
 
     <script>
-        /**
-         * VERSION CONTROL
-         * v1.3.0: Implementazione parsing valuta EUR e logica di quadratura passività.
-         * v1.2.3: Versione base con UI Tailwind.
-         */
-        const VERSION = "1.3.0";
         const fileInput = document.getElementById('fileInput');
         let rawData = [];
 
@@ -130,13 +119,27 @@
         function parseVal(val) {
             if (typeof val === 'number') return val;
             if (!val) return 0;
-            let clean = val.toString().replace(/[^\d,.-]/g, '');
-            if (clean.includes('.') && clean.includes(',')) {
-                clean = clean.replace(/\./g, '').replace(',', '.');
+            let s = val.toString().trim().replace(/"/g, '');
+            // Se contiene sia virgola che punto, capisce qual è il decimale
+            if (s.includes(',') && s.includes('.')) {
+                if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+                    s = s.replace(/\./g, '').replace(',', '.');
+                } else {
+                    s = s.replace(/,/g, '');
+                }
             } else {
-                clean = clean.replace(',', '.');
+                s = s.replace(',', '.');
             }
-            return parseFloat(clean) || 0;
+            return parseFloat(s) || 0;
+        }
+
+        function getRowValue(row, keys) {
+            const rowKeys = Object.keys(row);
+            const foundKey = rowKeys.find(rk => {
+                const cleanRK = rk.toLowerCase().replace(/[\n\r"\s]/g, '');
+                return keys.some(k => cleanRK === k.toLowerCase().replace(/[\n\r"\s]/g, ''));
+            });
+            return foundKey ? row[foundKey] : "";
         }
 
         function fmt(val) {
@@ -156,25 +159,25 @@
             let relevantRows = [];
 
             data.forEach(row => {
-                const desc = (row["Descrizione Contabile"] || row["Descrizione"] || "").toString();
-                const dare = parseVal(row["Dare"]);
-                const avere = parseVal(row["Avere"]);
-                const saldo = parseVal(row["Saldo Progressivo"] || row["SaldoProgressivo"]);
-                let dataReg = row["Data Registraz."] || row["Data"];
+                const desc = getRowValue(row, ["Descrizione Contabile", "Descrizione"]).toString();
+                const dare = parseVal(getRowValue(row, ["Dare"]));
+                const avere = parseVal(getRowValue(row, ["Avere"]));
+                const saldo = parseVal(getRowValue(row, ["Saldo Progressivo", "SaldoProgressivo"]));
+                let dataReg = getRowValue(row, ["Data Registraz.", "DataRegistraz.", "Data"]);
 
                 if (dataReg instanceof Date) {
                     dataReg = dataReg.toLocaleDateString('it-IT');
                 }
 
-                const codice = (row["Codice Profilo"] || "").toString();
-
-                const isBila = desc.toLowerCase().includes("bilancio di apertura") || codice === "BILA";
-                const isEnasarco = desc.toLowerCase().includes("enasarco") || codice === "042";
-                const isPayment = desc.toLowerCase().includes("versamento") || desc.toLowerCase().includes("addebito") || codice === "099" || codice === "SDD";
+                const codice = getRowValue(row, ["Codice Profilo", "Codice"]).toString();
+                const isBila = desc.toLowerCase().includes("bilancio di apertura") || codice.includes("BILA");
+                const isEnasarco = desc.toLowerCase().includes("enasarco") || codice.includes("042");
+                const isPayment = desc.toLowerCase().includes("versamento") || desc.toLowerCase().includes("addebito") || codice.includes("099") || codice.includes("SDD");
 
                 if (isBila || isEnasarco || isPayment) {
-                    if (isBila && saldoIniziale === 0) saldoIniziale = saldo;
-                    if (!isBila) {
+                    if (isBila) {
+                        saldoIniziale = saldo || (avere * -1);
+                    } else {
                         totalDare += dare;
                         totalAvere += avere;
                     }
@@ -196,7 +199,7 @@
             const diffNode = document.getElementById('kpiDiff');
             const cardNode = document.getElementById('statusCard');
 
-            if (diff < 0.01) {
+            if (diff < 0.05) {
                 statusNode.textContent = "QUADRATO";
                 statusNode.className = "text-xl font-bold mt-1 text-emerald-600";
                 diffNode.textContent = "Coincidenza perfetta con E.C.";
@@ -211,7 +214,7 @@
             relevantRows.forEach(r => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-3 text-slate-500">${r.dataReg}</td>
+                    <td class="px-6 py-3 text-slate-500">${r.dataReg || '-'}</td>
                     <td class="px-6 py-3 font-medium text-slate-700">${r.desc}</td>
                     <td class="px-6 py-3 text-right text-emerald-600">${r.dare ? fmt(r.dare) : '-'}</td>
                     <td class="px-6 py-3 text-right text-red-600">${r.avere ? fmt(r.avere) : '-'}</td>
@@ -221,8 +224,8 @@
             });
 
             const summaryData = [
-                { label: "Saldo Iniziale", dare: 0, avere: Math.abs(saldoIniziale), saldo: saldoIniziale },
-                { label: "Totale Movimenti Periodo", dare: totalDare, avere: totalAvere, saldo: expectedSaldo }
+                { label: "Saldo Iniziale (Debito)", dare: 0, avere: Math.abs(saldoIniziale), saldo: saldoIniziale },
+                { label: "Totale Movimenti Analizzati", dare: totalDare, avere: totalAvere, saldo: expectedSaldo }
             ];
 
             summaryData.forEach(s => {
