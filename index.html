@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadratura Enasarco Pro v1.1.0</title>
+    <title>Quadratura Enasarco Pro v1.1.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -19,7 +19,7 @@
     <div class="max-w-7xl mx-auto p-6">
         <div class="mb-8 flex items-baseline gap-3">
             <h1 class="text-4xl font-bold text-slate-900">Quadratura Enasarco</h1>
-            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.1.0</span>
+            <span class="text-sm font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">v1.1.1</span>
         </div>
         
         <p class="text-slate-500 -mt-6 mb-8">Analisi automatica rilevazioni, versamenti e saldo residuo. Supporto Excel e CSV.</p>
@@ -40,19 +40,19 @@
         <div id="dashboard" class="hidden grid lg:grid-cols-5 gap-5 mb-8 fade-in">
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
                 <div class="text-sm text-slate-500 font-medium">Totale Rilevazioni</div>
-                <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">USD 0,00</div>
+                <div id="totAvere" class="text-2xl font-bold text-blue-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
                 <div class="text-sm text-slate-500 font-medium">Totale Versamenti</div>
-                <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">USD 0,00</div>
+                <div id="totDare" class="text-2xl font-bold text-emerald-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
                 <div class="text-sm text-slate-500 font-medium">Debito Residuo</div>
-                <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">USD 0,00</div>
+                <div id="saldoResiduo" class="text-2xl font-bold text-orange-600 mt-2">EUR 0,00</div>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border">
                 <div class="text-sm text-slate-500 font-medium">Saldo Contabile</div>
-                <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">USD 0,00</div>
+                <div id="saldoContabile" class="text-2xl font-bold text-slate-900 mt-2">EUR 0,00</div>
             </div>
             <div id="quadraturaCard" class="bg-white rounded-2xl p-6 shadow-sm border">
                 <div class="text-sm text-slate-500 font-medium">Stato Quadratura</div>
@@ -120,7 +120,7 @@
         }
 
         function formatCurrency(v) {
-            return 'USD ' + Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return 'EUR ' + Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function processData(data) {
